@@ -29,8 +29,7 @@
   header .ver{font-size:11px; opacity:.75}
   .disclaimer{background:var(--warnBg); color:var(--warn); border-bottom:1px solid #e8d79a;
     padding:6px 14px; font-size:12px; text-align:center}
-  nav.symptoms{background:#fff; border-bottom:1px solid var(--border); padding:10px 10px 12px;
-    position:sticky; top:38px; z-index:9}
+  nav.symptoms{background:#fff; border-bottom:1px solid var(--border); padding:10px 10px 12px}
   nav.symptoms .nav-title{font-size:11px; color:var(--muted); margin:0 4px 6px}
   nav.symptoms .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
     gap:6px}
@@ -84,7 +83,6 @@
     border-bottom:3px solid transparent; transition:.15s}
   nav.view-tabs button:hover{background:rgba(255,255,255,.05); color:#fff}
   nav.view-tabs button.active{color:#fff; border-bottom-color:#fff; background:rgba(255,255,255,.12)}
-  nav.symptoms{top:80px}
   /* Score / Renal common */
   .score-picker{display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:6px;
     background:#fff; padding:10px; border-radius:12px; margin-bottom:12px; border:1px solid var(--border)}
@@ -1260,6 +1258,11 @@ function selectSymptom(s){
     b.classList.toggle("active", b.dataset.s === s);
   });
   render();
+  // iPhone等で選択後に鑑別エリアまで自動スクロール
+  setTimeout(() => {
+    const m = document.getElementById("main");
+    if(m) m.scrollIntoView({behavior:"smooth", block:"start"});
+  }, 50);
 }
 
 function render(){
