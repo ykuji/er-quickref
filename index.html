@@ -67,6 +67,21 @@
   .rfbadge{display:inline-block; font-size:10px; padding:2px 7px; border-radius:999px;
     background:#f0e8d0; color:#8a6a1a}
   .card.hidden{display:none}
+  /* Patient profile row */
+  .profile-row{background:#fff; border:1px solid var(--border); border-radius:12px;
+    padding:9px 11px; margin-bottom:12px}
+  .profile-row .plabel{font-size:11px; color:var(--muted); margin-bottom:6px}
+  .profile-row .pchips{display:flex; flex-wrap:wrap; gap:5px}
+  .pchip{display:inline-block; padding:5px 10px; border-radius:999px;
+    background:#f1f3f8; color:#1a1f2e; font-size:12px; cursor:pointer;
+    border:1.5px solid transparent; user-select:none; transition:.1s}
+  .pchip:hover{background:#e4e8f1}
+  .pchip.active{background:#1f3a5f; color:#fff; border-color:#1f3a5f}
+  .pchip.active::before{content:"✓ "; font-weight:700}
+  .card.starred{background:#fff8e5; border-left-width:4px; box-shadow:0 1px 3px rgba(228,169,60,.3)}
+  .card.starred.killer{background:#fff4e9}
+  .star-marker{display:inline-block; font-size:11px; margin-left:6px;
+    background:#f0e8d0; color:#8a6a1a; padding:2px 7px; border-radius:999px; font-weight:600; vertical-align:middle}
   .footer{text-align:center; color:var(--muted); font-size:11px; padding:20px 10px 10px}
   .footer .note{background:var(--warnBg); color:var(--warn); border-radius:8px; padding:8px 12px;
     margin-bottom:8px; font-size:12px; max-width:600px; margin-left:auto; margin-right:auto}
@@ -1178,6 +1193,31 @@ let currentSym = null;
 let currentScore = null;
 let scoreValues = {};
 
+/* 患者プロファイル定義（dx の typ+act テキストに対する部分一致） */
+const PROFILES = [
+  {key:"elderly",      label:"高齢",     kw:["高齢"]},
+  {key:"pediatric",    label:"小児",     kw:["小児","乳幼児","学童"]},
+  {key:"pregnancy",    label:"妊娠",     kw:["妊娠","妊婦","産後","産褥"]},
+  {key:"diabetes",     label:"糖尿病",   kw:["糖尿病","DKA","HHS"]},
+  {key:"immune",       label:"免疫抑制", kw:["免疫抑制","化学療法歴","HIV","ステロイド使用","好中球減少"]},
+  {key:"anticoag",     label:"抗凝固薬", kw:["抗凝固薬","ワルファリン","DOAC"]},
+  {key:"afib",         label:"心房細動", kw:["心房細動"]},
+  {key:"trauma",       label:"外傷",     kw:["外傷"]},
+  {key:"alcohol",      label:"大量飲酒", kw:["大量飲酒","アルコール離脱","飲酒歴"]},
+  {key:"malignancy",   label:"悪性腫瘍", kw:["悪性腫瘍","癌","腫瘍"]}
+];
+let activeProfiles = new Set();
+
+function matchProfile(dx){
+  if(activeProfiles.size === 0) return false;
+  const text = (dx.typ || "") + " " + (dx.act || "");
+  for(const p of activeProfiles){
+    const prof = PROFILES.find(x => x.key === p);
+    if(prof && prof.kw.some(k => text.includes(k))) return true;
+  }
+  return false;
+}
+
 /* ===== View 切替 ===== */
 function switchView(v){
   currentView = v;
@@ -1226,21 +1266,47 @@ function render(){
     return;
   }
   const d = DB[currentSym];
+
+  const profileRow = `
+    <div class="profile-row">
+      <div class="plabel">👤 患者プロファイル（該当する鑑別に ⭐ 強調表示）</div>
+      <div class="pchips">
+        ${PROFILES.map(p => {
+          const act = activeProfiles.has(p.key) ? " active" : "";
+          return `<span class="pchip${act}" data-p="${p.key}">${p.label}</span>`;
+        }).join("")}
+      </div>
+    </div>
+  `;
+
   const killerCards = d.killers.map(k => cardHtml(k, true)).join("");
   const commonCards = d.common.map(c => cardHtml(c, false)).join("");
 
   document.getElementById("main").innerHTML = `
+    ${profileRow}
     <div class="section-h killer">🚨 Killer 鑑別 <span class="cnt">(${d.killers.length})</span></div>
     ${killerCards}
     <div class="section-h common">📋 Common 鑑別 <span class="cnt">(${d.common.length})</span></div>
     ${commonCards}
   `;
+
+  // Profile chip toggle
+  document.querySelectorAll(".pchip[data-p]").forEach(el => {
+    el.addEventListener("click", () => {
+      const k = el.dataset.p;
+      if(activeProfiles.has(k)) activeProfiles.delete(k);
+      else activeProfiles.add(k);
+      render();
+    });
+  });
 }
 
 function cardHtml(dx, isKiller){
+  const starred = matchProfile(dx);
+  const star = starred ? ' <span class="star-marker">⭐ 要注意</span>' : '';
   return `
-    <div class="card${isKiller ? " killer" : ""}">
-      <div class="cname">${dx.n}</div>
+    <div class="card${isKiller ? " killer" : ""}${starred ? " starred" : ""}">
+      <div class="cname">${dx.n}${star}</div>
       <div class="field"><div class="flabel2">典型</div><div class="fval">${dx.typ}</div></div>
       <div class="field"><div class="flabel2">検査</div><div class="fval">${dx.tst}</div></div>
       <div class="action"><strong>次の一手：</strong>${dx.act}</div>
