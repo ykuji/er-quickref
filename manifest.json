@@ -1,0 +1,26 @@
+{
+  "name": "ERクイックリファレンス",
+  "short_name": "ERquickref",
+  "description": "ER主訴別の鑑別診断・スコア計算 教育用ツール（湘南台病院 救急科）",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7f9",
+  "theme_color": "#1f3a5f",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
